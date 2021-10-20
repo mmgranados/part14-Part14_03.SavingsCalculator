@@ -17,6 +17,9 @@ import javafx.stage.Stage;
 import java.text.DecimalFormat;
 import java.time.Month;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SavingsCalculatorApplication extends Application {
 
@@ -84,7 +87,7 @@ public class SavingsCalculatorApplication extends Application {
         }
 
         // make the data series of savings with interest rate
-        for (int years = 1; years < 31; years++) {
+        for (int years = 0; years < 31; years++) {
             withInterest.getData().add(new XYChart.Data(years,
                     sumOfCashFlows(sliderMonthlySavings.getValue()*12, sliderInterestRate.getValue()/100 , years)));
         }
@@ -106,24 +109,24 @@ public class SavingsCalculatorApplication extends Application {
                             newNoInterest.getData().add(new XYChart.Data(years, (12 * years * sliderMonthlySavings.getValue())));
                         }
 
+                        // make the data series of savings with no interest rate
                         noInterest.getData().setAll(newNoInterest.getData());
 
                         XYChart.Series newWithInterest = new XYChart.Series();
 
                         // Section makes the chart update the compounding savings when there are changes in monthly cash flow
-                        for (int years = 1; years < 31; years++) {
+                        for (int years = 0; years < 31; years++) {
                             newWithInterest.getData().add(new XYChart.Data(years,
                                     sumOfCashFlows(sliderMonthlySavings.getValue()*12, sliderInterestRate.getValue()/100 , years)));
                         }
 
                         withInterest.getData().setAll(newWithInterest.getData());
 
-                        // make the data series of savings with no interest rate
-
-
+                        System.out.println(getLineChartValues(lineChart).toString());
                     }
-                });
 
+
+                });
 
         // Listener for changes in value of slider value
         sliderInterestRate.valueProperty().addListener(
@@ -138,12 +141,14 @@ public class SavingsCalculatorApplication extends Application {
                         XYChart.Series newWithInterest = new XYChart.Series();
 
                         // Section makes the chart update the compounding savings when there are changes in interest rate
-                        for (int years = 1; years < 31; years++) {
+                        for (int years = 0; years < 31; years++) {
                             newWithInterest.getData().add(new XYChart.Data(years,
                                     sumOfCashFlows(sliderMonthlySavings.getValue()*12, sliderInterestRate.getValue()/100 , years)));
                         }
 
                         withInterest.getData().setAll(newWithInterest.getData());
+
+                        System.out.println(getLineChartValues(lineChart).toString());
                     }
                 });
 
@@ -164,7 +169,7 @@ public class SavingsCalculatorApplication extends Application {
     public static double sumOfCashFlows(double cashFlow, double interest, int duration) {
         ArrayList<Double> cash = new ArrayList<>();
         for (int year = 1; year < duration + 1; year++) {
-            double futureVal = cashFlow * Math.pow(1+interest, duration-year+1); // cashFLow * (1+intRate) ^ duration
+            double futureVal = cashFlow * Math.pow(1+interest, 1+duration-year); // cashFLow * (1+intRate) ^ duration
             cash.add(futureVal);
 
         }
@@ -174,6 +179,38 @@ public class SavingsCalculatorApplication extends Application {
                 .sum();
 
         return totalCash;
+    }
+
+    private List<Map<Integer, Double>> getLineChartValues(LineChart lineChart) {
+        List<Map<Integer, Double>> valuesOfChartLines = new ArrayList<>();
+
+        for (int i = 0; i < lineChart.getData().size(); i++) {
+
+            XYChart.Series data = (XYChart.Series) lineChart.getData().get(i);
+            List<XYChart.Data> dataPoints = new ArrayList<>();
+            data.getData().stream().forEach(d -> dataPoints.add(XYChart.Data.class.cast(d)));
+
+            Map<Integer, Double> lineValues = new HashMap<>();
+            for (XYChart.Data point : dataPoints) {
+                int x = (int) point.getXValue();
+                double y = 0;
+
+                try {
+                    y = (double) point.getYValue();
+                } catch (Throwable t) {
+                    try {
+                        y = (int) point.getYValue();
+                    } catch (Throwable t2) {
+                    }
+                }
+
+                lineValues.put(x, y);
+            }
+
+            valuesOfChartLines.add(lineValues);
+        }
+
+        return valuesOfChartLines;
     }
 
     public static void main(String[] args) {
